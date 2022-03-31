@@ -1,6 +1,4 @@
-- 👋 Hi, I’m @neulizhe
-- 👀 I’m interested in Algorithm
-- 🌱 I’m currently learning Zuo Chengyun's algorithm course
+- 👋 Hi, I’m @neulizhe. This is my notebook of Algorithm course
 - 📫 How to reach me: dhulizhe@outlook.com
 
 <!---
