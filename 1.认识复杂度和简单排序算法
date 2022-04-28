@@ -6,26 +6,23 @@
 
 2 选择排序——时间复杂度O(N²)，额外空间复杂度O(1)a
 2.1 原理：
-	episode 1，初始化一个inex。从0到N-1，找到最小值，用index记住最小值的下标。将arr[index]与arr[0]交换
+	episode 1，初始化一个index。从0到N-1，找到最小值，用index记住最小值的下标。将arr[index]与arr[0]交换
 	episode 2，从1到N-1，找到最小值，与arr[1]交换
 	…………
 
 2.2 代码：
 void selectSort(int arr[], int len)
-{
-	for (int i = 0; i < len; i++)
+{	
+	for (int i = 0; i < len-1; i++)
 	{
-		int index = i;
+		int minIndex = i;
 		for (int j = i + 1; j < len; j++)
 		{
-			if (arr[j] < arr[index])
-			{
-				index = j;
-			}
+			minIndex = arr[j] < arr[minIndex] ? j : minIndex;
 		}
 		int temp = arr[i];
-		arr[i] = arr[index];
-		arr[index] = temp;
+		arr[i] = arr[minIndex];
+		arr[minIndex] = temp;
 	}
 }
 
@@ -93,7 +90,7 @@ a = a ^ b;	//a = 甲 ^ 乙 ^ 甲 = 乙, b = 甲
 
 5.插入排序
 5.1 原理：
-	想象为打斗地主抓牌的时候，从0~N，第N位开始看，比左小换，一直比下去，直到不换为止
+	想象为打斗地主抓牌的时候，从0~N，第N位开始看，比左小换，一直比下去，直到不换为止，N++
 	0~0不用换
 	episode 1，0~1，看arr[1]，比左小就换，不小就停
 	episode 2，0~2，看arr[2]，比左小就换，不小就停
@@ -101,15 +98,64 @@ a = a ^ b;	//a = 甲 ^ 乙 ^ 甲 = 乙, b = 甲
 	…………
 
 5.2 代码：
+void insertSort(int arr[], int len)
+{
+	for (int i = 1; i < len; i++)
+	{
+		while (arr[i] < arr[i - 1])
+		{
+			int temp = arr[i];
+			arr[i] = arr[i - 1];
+			arr[i - 1] = temp;
+			i--;
+		}
+	}
+}
 
+5.3 补充：
+	数据状况不同时，时间复杂度不同，最差情况O(N²)。
 
 
 6.二分法
+6.1 有序数组中，某个数是否存在？
+	假设要找num是否存在，遍历需要O(N)。
+	找中间的数x，x>num右边的不要了，x<num左边的不要了，O(logN)
 
+6.2 有序数组中，大于等于某个数最左侧的位置
+	如果arr[mid]>=num，往左找；如果arr[mid]<=num，往右找，最后就会找到这个位置
+	达标时，更新t
 
+6.3 补充：
+	arr[]无序，相邻数一定不相等，求一个局部最小的位置，要求时间复杂度好于O(N)
+	base case：如果arr[0]<arr[1]，那么0就是；如果arr[N-1]<arr[N-2]，那么N-1就是
+	找中点M，如果M比M-1、M+1都小，那么就是M；假设M比M-1大，那么继续往左找，一直二分到死，就可以找到局部最小。
+	
+	
 7.对数器
+	随机样本产生器，产生出的样本分别送给想测的方法和标准方法，比较结果是否相等
+	(int)(Math.random() * N) -> [0, N-1]所有整数等概率返回一个
 
 
 8.递归求最大值
+	mid = (L+R)/2可能会溢出，改为：mid = L + (R-L)/2 = L + (R-L)>>1
 
+8.1 代码：
+int process(int arr[], int L, int R)
+{
+	if (L == R)
+	{
+		return arr[L];
+	}
+	int mid = L + ((R-L)>>1);
+	int leftMax = process(arr, L, mid);
+	int rightMax = process(arr, mid+1, R);
+	return max(leftMax, rightMax);
+}
 
+8.2 master公式：
+	T(N) = a * T(N/b) + O(N**d)
+	N-母问题数据量；a-子问题调用次数；b-子过程规模；d-除了子问题的调用外，剩下的过程
+	
+logba < d —— O(N**d)
+logba > d —— O(N**logba)
+logba == d —— O(N**d * logN)
