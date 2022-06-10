@@ -1,0 +1,238 @@
+3详解桶排序以及排序内容大总结
+3.1完全二叉树
+	完全二叉树：满的或者子树按顺序。
+3.1.1数组与完全二叉树
+可以把数组从0出发的连续一段想象成完全二叉树。数组与树位置的对应关系为：i的左孩子为2*i+1、右孩子为2*i+2、父为(i-1)/2。
+3.1.2堆
+	堆在逻辑上是完全二叉树。分大根堆和小根堆。
+	以它为头的整棵树，每个子树的最大值是头节点的值——大根堆
+3.1.3数组与堆
+	heapsize从0开始。每传来一个数，就放在heapsize++的位置上，然后与父PK（通过下标计算公式），一直PK上去。此过程叫做heapinsert。
+void heapInsert(int* arr, int index)
+{
+	while (arr[index] > arr[(index - 1) / 2])	//当前数比父大，且还未到头节点
+	{
+		swap(arr, index, (index - 1) / 2);
+		index = (index - 1) / 2;
+	}
+}
+	现在让你找出最大的数——头节点，然后把它拿出去，剩下的如何保持大根堆形状？
+	先把最后一个数放在0位置上，heapsize减小（最后一个数不释放也可以，已经在无效区里了）。从头节点开始，左孩子右孩子中，找个最大值与它PK，如果孩子赢了，把大孩子拿上来；一直向下换下去，直到两个孩子都不比它大，或没有孩子了，停。此过程叫做heapify堆化。
+//从index往下走，进行堆化，heapsize用于管理堆的大小——边界
+void heapify(int* arr, int index, int heapSize)
+{
+	int left = index * 2 + 1;	//左孩子的下标
+	while (left < heapSize)	//左孩子没越界==下方还有孩子的时候
+	{
+		//右孩子存在且右孩子值大，则右孩子胜出；其余情况左孩子胜出
+		int largest = left + 1 < heapSize && arr[left + 1] > arr[left] ? left + 1 : left;
+		//父和较大孩子之间，谁的值大，把下标给largest
+		largest = arr[largest] > arr[index] ? largest : index;
+		if (largest == index)
+		{
+			break;	//父节点是最大的，不用往下走了
+		}
+		//如果父节点不是最大的，执行下面三行
+		swap(arr, largest, index);	//把子孩子中较大的与父交换
+		index = largest;	//把index往下走
+		left = index * 2 + 1;	//更新left
+	}
+}
+	如果现在用户抽风，随便挑一个i位置把它的数换成a，如何保持大根堆？
+	如果a变小了，往下进行一个heapify；如果a变大了，往上进行一个heapinsert。两个只会中一个，调整完肯定对。——先heapinsert，如果不动，就heapify。
+	调整代价O(logN)。
+3.2堆排序 时O(NlogN) 空O(1)
+3.2.1代码
+void heapSort(int* arr, int len)
+{
+	if (arr == NULL || len < 2)
+	{
+		return;
+	}
+	for (int i = 0; i < len; i++)	//整体变成大根堆
+	{
+		heapInsert(arr, i);
+	}
+	int heapSize = len;
+	swap(arr, 0, --heapSize);	//交换[0] [--heapSize]
+	while (heapSize > 0)
+	{
+		heapify(arr, 0, heapSize);	//[0]往下heapify
+		swap(arr, 0, --heapSize);	//交换[0] [--heapSize]
+	}
+}
+3.2.2优化 时O(N)
+	把一个数组变成大根堆。
+从最右下开始，从右到左，从下到上的顺序，heapify。
+ 
+for (int i = len - 1; i >= 0; i--)
+{
+	heapify(arr, i, len);
+}
+注：堆结构比堆排序更重要；优先级队列结构就是堆结构。
+3.2.3拓展题
+	已知一个几乎有序的数组，几乎有序是指，如果把数组排好顺序的话，每个元素移动的距离可以不超过k，并且k相对于数组来说比较小。请选择一个合适的排序算法针对这个数据进行排序。
+ 
+	k=6，小根堆，遍历前7个数，放到小根堆里，[0]一定是min，弹出[0]；把[7]放到小根堆里，弹出[1]，……，最后临近结束时，依次弹出。
+	N个数需要扩容logN次，均摊之后O(N*logN)/N = O(logN)。
+注：系统提供的堆结构，只支持你给它一个数，它给你一个数。不支持已经形成的东西重新调整成堆结构。
+void SortArrayDistanceLessK(int* arr, int k,int len)
+{
+	priority_queue<int, vector<int>, greater<int>> heap;
+	int index = 0;
+	for (; index <= min(len, k); index++)	//先创建一个小根堆
+	{
+		heap.push(arr[index]);
+	}
+	int i = 0;
+	for (; index < len; i++, index++)
+	{
+		heap.push(arr[index]);	//加入一个数
+		arr[i] = heap.top();	//弹出顶
+		heap.pop();
+	}
+	while (!heap.empty())	//还剩几个数的时候
+	{
+		arr[i++] = heap.top();	//依次弹出
+		heap.pop();
+	}
+}
+3.3比较器
+	比较器==谓词：返回bool类型的仿函数。
+class Person
+{
+public:
+	Person(int name, int age)
+	{
+		this->m_Name = name;
+		this->m_Age = age;
+	}
+
+	string m_Name;
+	int m_Age;
+};
+
+class MyCompare
+{
+public:
+	bool operator()(Person& p1, Person& p2)
+	{
+		return p1.m_Age > p2.m_Age;
+	}
+ };
+
+void test()
+{
+	vector<Person>v;
+	Person p1("Tom", 18);
+	Person p2("Jerry", 20);
+	v.push_back(p1);
+	v.push_back(p2);
+	sort(v.begin(), v.end(), MyCompare());
+}
+3.4不基于比较的排序——计数排序
+	待排序数组int []年龄，准备一个长度201的辅助数组，遍历一次原数组，遇到0，就在辅助数组中0位置上++，遍历结束后得到一个词频数组，再将词频数组还原成正常数组。
+	时间复杂度O(N)。用途较窄，只能根据数据状况定制。
+3.5基数排序
+[17, 13, 25, 100, 72]。先看最大数字有几位，3位，把不到3位的左边补0。[017, 013, 025, 100, 072]。准备10个桶（10进制，这里是队列）。
+遍历，按个位数字入桶，再从左往右依次倒出来，[100, 072, 013, 025, 017]。
+遍历，按十位数字入桶，再从左往右依次倒出来，[100, 013, 017, 025, 072]。
+遍历，按百位数字入桶，再从左往右依次倒出来，[013, 017, 025, 072, 100]。
+每一位的优先级都保留下来了，每一位的相对位置就排好了。
+3.5.1代码思路
+	没有桶，用一个辅助数组Count充当词频表（[2]代表该位是2的数字有几个）。获得词频表后，将其累加，变成前缀和（[2]代表该位≤2的数字有几个）。Count数组已经把原数组划分区域了，接下来从右往左遍历原数组，将原数组中的数填入help数组对应区域的最右位置，更新Count[i]。
+3.5.2代码
+class RadixSort	//基数排序
+{
+public:
+	void radixSort(int* arr, int len)
+	{
+		if (arr == NULL || len < 2)
+		{
+			return;
+		}
+		process(arr, 0, len - 1, maxbits(arr, len));
+	}
+
+	//最大值有多少位
+	int maxbits(int* arr, int len)
+	{
+		int max_value = INT_MIN;
+		for (int i = 0; i < len; i++)
+		{
+			max_value = max(max_value, arr[i]);
+		}
+		int res = 0;
+		while (max_value != 0)
+		{
+			res++;
+			max_value /= 10;
+		}
+		return res;
+	}
+
+	void process(int* arr, int L, int R, int digit)
+	{
+		const int radix = 10;
+		int i = 0, j = 0;
+		int* help = new int[R - L + 1];
+		for (int d = 1; d <= digit; d++)	//有多少位就发生多少次入桶出桶
+		{
+			int* count = new int[radix];
+			for (int k = 0; k < radix; k++)
+			{
+				count[k] = 0;
+			}
+			for (i = L; i <= R; i++)
+			{
+				j = getDigit(arr[i], d);	//取出对应位的数字
+				count[j]++;		//词频数组更新
+			}
+			for (i = 1; i < radix; i++)		//将count处理成前缀和（累加和）样子
+			{
+				count[i] += count[i - 1];
+			}
+			for (i = R; i >= L; i--)	//数组从右往左遍历
+			{
+				j = getDigit(arr[i], d);
+				help[count[j] - 1] = arr[i];	//把这个数放到对应区域的最后
+				count[j]--;		//更新对应区域的词频
+			}
+			for (i = L, j = 0; i <= R; i++, j++)
+			{
+				arr[i] = help[j];	//把出桶之后的数给原数组，再循环对下一位进行操作
+			}
+		}
+	}
+
+	int getDigit(int x, int d)
+	{
+
+		return((x / ((int)pow(10, d - 1)) % 10));
+	}
+
+};
+3.6排序算法的稳定性及汇总
+3.6.1稳定性概念
+	相同值的相对次序保持与原来一样
+3.6.2排序算法汇总
+	时间复杂度	额外空间复杂度	稳定性
+选择排序	O(N²)	O(1)	×
+冒泡排序	O(N²)	O(1)	√
+插入排序	O(N²)	O(1)	√
+归并排序	O(NlogN)	O(N)	√
+快排（random）	O(NlogN)	O(logN)	×
+堆排序	O(NlogN)	O(1)	×
+	首选快排，常数时间低；其次堆排；最后归并有稳定性。
+Q：基于比较的排序，时间复杂度能否低于O(NlogN)？
+A：不行。
+Q：时间复杂度O(NlogN)，额外空间复杂度能否低于O(N)且稳定？
+A：不行。
+3.6.3大坑题
+归并排序的额外空间复杂度可以变为O(1)，但会损失稳定性。
+	原地归并排序都是垃圾，时间复杂度变为O(N²)。
+	快速排序可以做到稳定，但额外空间复杂度变为O(N)。
+	奇数放在数组左边，偶数放在数组右边，还要求原始的相对次序不变，时O(N)，空O(1)？经典快排的partition做不到稳定性，但是经典快排的partition又是0、1标准，和就奇偶问题是同一种调整策略，快排做不到，我也做不到。01stable sort
+3.6.4工程上对排序的改进
+	充分利用O(NlogN)和O(N²)各自的优势，样本量小于60直接插入排序，否则快排。
+	稳定性的考虑：基础数据类型——快排；未知数据类型——归并排序。
